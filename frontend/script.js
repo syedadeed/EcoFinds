@@ -209,11 +209,12 @@ async function handleLogin(e) {
     }
     
     try {
-        const response = await fetch('/login', {
+        const response = await fetch('/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Include cookies for session management
             body: JSON.stringify({
                 email: email,
                 password: password
@@ -223,8 +224,16 @@ async function handleLogin(e) {
         const data = await response.json();
         
         if (response.ok && data.status === 'success') {
-            // Login successful - get user info
-            await fetchUserInfo();
+            // Login successful - create user object from form data
+            currentUser = {
+                id: Date.now(), // Temporary ID
+                name: 'User', // Default name since we don't have user info endpoint
+                email: email,
+                phone: '',
+                location: '',
+                bio: ''
+            };
+            localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
             showScreen('product-feed');
             updateNavigation();
             showNotification('Welcome back!', 'success');
@@ -250,11 +259,12 @@ async function handleSignup(e) {
     }
     
     try {
-        const response = await fetch('/signup', {
+        const response = await fetch('/api/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Include cookies for session management
             body: JSON.stringify({
                 name: name,
                 email: email,
@@ -265,8 +275,16 @@ async function handleSignup(e) {
         const data = await response.json();
         
         if (response.ok && data.status === 'success') {
-            // Signup successful - get user info
-            await fetchUserInfo();
+            // Signup successful - create user object from form data
+            currentUser = {
+                id: Date.now(), // Temporary ID
+                name: name,
+                email: email,
+                phone: '',
+                location: '',
+                bio: ''
+            };
+            localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
             showScreen('product-feed');
             updateNavigation();
             showNotification('Account created successfully!', 'success');
@@ -293,39 +311,58 @@ function toggleAuthForm() {
 }
 
 async function fetchUserInfo() {
+    // Since the backend doesn't have a user info endpoint,
+    // we'll create a basic user object from the login/signup data
+    // In a real application, you would need to add a user info endpoint to the backend
+    
+    // For now, we'll create a minimal user object
+    // The actual user data would come from the login/signup response
+    if (!currentUser) {
+        currentUser = {
+            id: Date.now(), // Temporary ID
+            name: 'User', // Default name
+            email: '', // Will be set from form data
+            phone: '',
+            location: '',
+            bio: ''
+        };
+    }
+    
+    localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
+}
+
+async function logout() {
     try {
-        const response = await fetch('/userinfo', {
-            method: 'GET',
-            credentials: 'include' // Include cookies for session
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include' // Include cookies for session management
         });
         
         const data = await response.json();
         
         if (response.ok && data.status === 'success') {
-            currentUser = {
-                id: data.user.id,
-                name: data.user.name,
-                email: data.user.email,
-                phone: '', // Default values for optional fields
-                location: '',
-                bio: ''
-            };
-            
-            localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
+            currentUser = null;
+            localStorage.removeItem('ecofinds_user');
+            showScreen('login-screen');
+            updateNavigation();
+            showNotification('Logged out successfully', 'success');
         } else {
-            console.error('Failed to fetch user info:', data.message);
+            // Even if API call fails, clear local state
+            currentUser = null;
+            localStorage.removeItem('ecofinds_user');
+            showScreen('login-screen');
+            updateNavigation();
+            showNotification('Logged out successfully', 'success');
         }
     } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error('Logout error:', error);
+        // Even if API call fails, clear local state
+        currentUser = null;
+        localStorage.removeItem('ecofinds_user');
+        showScreen('login-screen');
+        updateNavigation();
+        showNotification('Logged out successfully', 'success');
     }
-}
-
-function logout() {
-    currentUser = null;
-    localStorage.removeItem('ecofinds_user');
-    showScreen('login-screen');
-    updateNavigation();
-    showNotification('Logged out successfully', 'success');
 }
 
 // Product management

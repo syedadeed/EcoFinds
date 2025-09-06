@@ -151,50 +151,29 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func getUserInfo(w http.ResponseWriter, r *http.Request) {
-	// Get session token from cookie
+func logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
-	if err != nil {
+	if err != nil{
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "error",
-			"message": "not authenticated",
+			"message": "no session cookie provided",
 		})
 		return
 	}
-	
-	// Get user ID from session
-	var userID int
-	err = db.QueryRow("SELECT id FROM sessions WHERE session_token = $1", cookie.Value).Scan(&userID)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "error",
-			"message": "invalid session",
-		})
-		return
-	}
-	
-	// Get user info
-	var name, email string
-	err = db.QueryRow("SELECT name, email FROM user_info WHERE id = $1", userID).Scan(&name, &email)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "error",
-			"message": "user not found",
-		})
-		return
-	}
-	
+	db.Exec("DELETE FROM sessions WHERE session_token = $1", cookie.Value)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+	})
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status": "success",
-		"user": map[string]interface{}{
-			"id":    userID,
-			"name":  name,
-			"email": email,
-		},
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "logout successful",
 	})
 }
 
@@ -203,7 +182,7 @@ func main(){
 	initDB()
 	http.HandleFunc("POST /login", login)
 	http.HandleFunc("POST /signup", signup)
-	http.HandleFunc("GET /userinfo", getUserInfo)
+	http.HandleFunc("POST /logout", logout)
 	port := os.Getenv("PORT")
 	http.ListenAndServe(port, nil)
 }

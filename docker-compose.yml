@@ -7,7 +7,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=eco
-      - PORT=8001
+      - PORT=:8001
     depends_on:
       - db
     networks:
