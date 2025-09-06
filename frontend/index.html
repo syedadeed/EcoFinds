@@ -1,15 +1,463 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Test</title>
-        <style>
-body{
-    background-color: #121212;
-    color: whitesmoke;
-}
-        </style>
-    </head>
-    <body>
-        <h1>Hello World</h1>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFinds - Sustainable Marketplace</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="../images/logo.png" alt="EcoFinds Logo" class="logo">
+                <span class="brand-text">EcoFinds</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#" class="nav-link" onclick="showScreen('product-feed')">Browse</a>
+                <a href="#" class="nav-link" onclick="showScreen('my-listings')">My Listings</a>
+                <a href="#" class="nav-link" onclick="showScreen('cart')">Cart</a>
+                <a href="#" class="nav-link" onclick="showScreen('dashboard')">Profile</a>
+                <a href="#" class="nav-link" onclick="logout()">Logout</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login/Sign Up Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <img src="../images/logo.png" alt="EcoFinds Logo" class="login-logo">
+                    <h1>Welcome to EcoFinds</h1>
+                    <p>Your sustainable marketplace</p>
+                </div>
+                
+                <form class="login-form" id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>Don't have an account? <a href="#" onclick="toggleAuthForm()">Sign up</a></p>
+                </div>
+            </div>
+            
+            <div class="signup-card" id="signup-card" style="display: none;">
+                <div class="login-header">
+                    <img src="../images/logo.png" alt="EcoFinds Logo" class="login-logo">
+                    <h1>Join EcoFinds</h1>
+                    <p>Start your sustainable journey</p>
+                </div>
+                
+                <form class="login-form" id="signup-form">
+                    <div class="form-group">
+                        <label for="signup-name">Full Name</label>
+                        <input type="text" id="signup-name" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Sign Up</button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>Already have an account? <a href="#" onclick="toggleAuthForm()">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Listing Feed Screen -->
+    <div id="product-feed" class="screen">
+        <div class="container">
+            <div class="feed-header">
+                <div class="search-section">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search for sustainable products..." id="search-input">
+                    </div>
+                    <div class="category-filters">
+                        <button class="filter-btn active" data-category="all">All</button>
+                        <button class="filter-btn" data-category="electronics">Electronics</button>
+                        <button class="filter-btn" data-category="clothing">Clothing</button>
+                        <button class="filter-btn" data-category="home">Home & Garden</button>
+                        <button class="filter-btn" data-category="books">Books</button>
+                    </div>
+                </div>
+                <button class="btn btn-primary add-product-btn" onclick="showScreen('add-product')">
+                    <i class="fas fa-plus"></i> Add Product
+                </button>
+            </div>
+            
+            <div class="products-grid" id="products-grid">
+                <!-- Products will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Product Screen -->
+    <div id="add-product" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button class="btn btn-secondary" onclick="showScreen('product-feed')">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h1>Add New Product</h1>
+            </div>
+            
+            <form class="product-form" id="add-product-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="product-title">Product Title</label>
+                        <input type="text" id="product-title" name="title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="product-category">Category</label>
+                        <select id="product-category" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="home">Home & Garden</option>
+                            <option value="books">Books</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="product-description">Description</label>
+                    <textarea id="product-description" name="description" rows="4" required></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="product-price">Price ($)</label>
+                        <input type="number" id="product-price" name="price" step="0.01" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="product-image">Product Image</label>
+                        <button type="button" class="btn btn-secondary image-upload-btn" onclick="document.getElementById('product-image').click()">
+                            <i class="fas fa-image"></i> Add Image (Placeholder)
+                        </button>
+                        <input type="file" id="product-image" name="image" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary submit-btn">Submit Listing</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- My Listings Screen -->
+    <div id="my-listings" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h1>My Listings</h1>
+                <button class="btn btn-primary" onclick="showScreen('add-product')">
+                    <i class="fas fa-plus"></i> Add Product
+                </button>
+            </div>
+            
+            <div class="my-products-grid" id="my-products-grid">
+                <!-- User's products will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Detail Screen -->
+    <div id="product-detail" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button class="btn btn-secondary" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+            </div>
+            
+            <div class="product-detail-content" id="product-detail-content">
+                <!-- Product details will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="dashboard" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h1>My Profile</h1>
+                <div class="profile-actions">
+                    <button class="btn btn-secondary" onclick="showScreen('my-listings')">
+                        <i class="fas fa-list"></i> My Listings
+                    </button>
+                    <button class="btn btn-secondary" onclick="showScreen('previous-purchases')">
+                        <i class="fas fa-history"></i> Purchase History
+                    </button>
+                </div>
+            </div>
+            
+            <div class="dashboard-content">
+                <!-- Profile Header Section -->
+                <div class="profile-header">
+                    <div class="profile-image-container">
+                        <div class="profile-image-wrapper">
+                            <img src="https://via.placeholder.com/200x200/10b981/FFFFFF?text=JD" alt="Profile" id="profile-img">
+                            <div class="profile-image-overlay">
+                                <button class="btn btn-secondary edit-image-btn" onclick="document.getElementById('profile-image-input').click()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div class="profile-info">
+                        <h2 id="profile-display-name">John Doe</h2>
+                        <p class="profile-email" id="profile-display-email">john.doe@example.com</p>
+                        <p class="profile-location" id="profile-display-location">
+                            <i class="fas fa-map-marker-alt"></i> San Francisco, CA
+                        </p>
+                        <div class="profile-badges">
+                            <span class="badge eco-warrior">
+                                <i class="fas fa-leaf"></i> Eco Warrior
+                            </span>
+                            <span class="badge verified">
+                                <i class="fas fa-check-circle"></i> Verified
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Stats Section -->
+                <div class="profile-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-listings">0</h3>
+                            <p>Products Listed</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-purchases">0</h3>
+                            <p>Items Purchased</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="user-rating">4.8</h3>
+                            <p>Average Rating</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="member-since">2024</h3>
+                            <p>Member Since</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Form Section -->
+                <div class="profile-form-section">
+                    <div class="section-header">
+                        <h3>Edit Profile Information</h3>
+                        <button class="btn btn-secondary" id="toggle-edit-form">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                    </div>
+                    
+                    <form class="profile-form" id="profile-form" style="display: none;">
+                        <div class="form-section">
+                            <h4>Personal Information</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-name">Full Name</label>
+                                    <input type="text" id="profile-name" name="name" value="John Doe">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile-email">Email</label>
+                                    <input type="email" id="profile-email" name="email" value="john.doe@example.com">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-phone">Phone</label>
+                                    <input type="tel" id="profile-phone" name="phone" value="+1 (555) 123-4567">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile-location">Location</label>
+                                    <input type="text" id="profile-location" name="location" value="San Francisco, CA">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4>About You</h4>
+                            <div class="form-group">
+                                <label for="profile-bio">Bio</label>
+                                <textarea id="profile-bio" name="bio" rows="4" placeholder="Tell us about yourself and your passion for sustainability...">Passionate about sustainable living and eco-friendly products. I believe in making conscious choices that benefit both our planet and future generations.</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4>Preferences</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-interests">Interests</label>
+                                    <select id="profile-interests" name="interests" multiple>
+                                        <option value="electronics">Electronics</option>
+                                        <option value="clothing">Clothing</option>
+                                        <option value="home">Home & Garden</option>
+                                        <option value="books">Books</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile-notifications">Email Notifications</label>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="notifications" value="new-messages" checked>
+                                            <span class="checkmark"></span>
+                                            New Messages
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="notifications" value="product-updates" checked>
+                                            <span class="checkmark"></span>
+                                            Product Updates
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="notifications" value="promotions">
+                                            <span class="checkmark"></span>
+                                            Promotions
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Recent Activity Section -->
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-list" id="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong>Added new product:</strong> Eco-Friendly Bamboo Phone Case</p>
+                                <span class="activity-time">2 hours ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong>Purchased:</strong> Solar-Powered Garden Lights</p>
+                                <span class="activity-time">1 day ago</span>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p><strong>Received 5-star rating</strong> for Organic Cotton T-Shirt</p>
+                                <span class="activity-time">3 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Screen -->
+    <div id="cart" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h1>Shopping Cart</h1>
+            </div>
+            
+            <div class="cart-content" id="cart-content">
+                <!-- Cart items will be dynamically loaded here -->
+            </div>
+            
+            <div class="cart-footer" id="cart-footer" style="display: none;">
+                <div class="cart-summary">
+                    <div class="total">
+                        <span>Total: ₹<span id="cart-total">0</span></span>
+                    </div>
+                    <button class="btn btn-primary checkout-btn">Proceed to Checkout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Previous Purchases Screen -->
+    <div id="previous-purchases" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h1>Previous Purchases</h1>
+            </div>
+            
+            <div class="purchases-content" id="purchases-content">
+                <!-- Purchase history will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
 </html>
