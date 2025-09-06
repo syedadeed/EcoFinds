@@ -151,11 +151,59 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func getUserInfo(w http.ResponseWriter, r *http.Request) {
+	// Get session token from cookie
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "not authenticated",
+		})
+		return
+	}
+	
+	// Get user ID from session
+	var userID int
+	err = db.QueryRow("SELECT id FROM sessions WHERE session_token = $1", cookie.Value).Scan(&userID)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "invalid session",
+		})
+		return
+	}
+	
+	// Get user info
+	var name, email string
+	err = db.QueryRow("SELECT name, email FROM user_info WHERE id = $1", userID).Scan(&name, &email)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "user not found",
+		})
+		return
+	}
+	
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"user": map[string]interface{}{
+			"id":    userID,
+			"name":  name,
+			"email": email,
+		},
+	})
+}
+
 func main(){
 	db = connectDB()
 	initDB()
 	http.HandleFunc("POST /login", login)
 	http.HandleFunc("POST /signup", signup)
+	http.HandleFunc("GET /userinfo", getUserInfo)
 	port := os.Getenv("PORT")
 	http.ListenAndServe(port, nil)
 }

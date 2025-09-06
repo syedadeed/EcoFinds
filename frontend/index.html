@@ -157,16 +157,31 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="product-price">Price ($)</label>
+                        <label for="product-price">Price (₹)</label>
                         <input type="number" id="product-price" name="price" step="0.01" min="0" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="product-image">Product Image</label>
-                        <button type="button" class="btn btn-secondary image-upload-btn" onclick="document.getElementById('product-image').click()">
-                            <i class="fas fa-image"></i> Add Image (Placeholder)
-                        </button>
-                        <input type="file" id="product-image" name="image" accept="image/*" style="display: none;">
+                        <div class="image-upload-container">
+                            <div class="image-upload-area" id="image-upload-area">
+                                <div class="upload-placeholder" id="upload-placeholder">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Click to upload product image</p>
+                                    <span>or drag and drop</span>
+                                </div>
+                                <img id="image-preview" style="display: none;" alt="Product preview">
+                            </div>
+                            <input type="file" id="product-image" name="image" accept="image/*" style="display: none;">
+                            <div class="image-actions" id="image-actions" style="display: none;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="changeImage()">
+                                    <i class="fas fa-edit"></i> Change
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeImage()">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

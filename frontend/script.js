@@ -71,13 +71,22 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSampleData();
 });
 
-function initializeApp() {
+async function initializeApp() {
     // Check if user is logged in
     const savedUser = localStorage.getItem('ecofinds_user');
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
-        showScreen('product-feed');
-        updateNavigation();
+        // Verify session is still valid
+        try {
+            await fetchUserInfo();
+            showScreen('product-feed');
+            updateNavigation();
+        } catch (error) {
+            // Session invalid, redirect to login
+            currentUser = null;
+            localStorage.removeItem('ecofinds_user');
+            showScreen('login-screen');
+        }
     } else {
         showScreen('login-screen');
     }
@@ -125,6 +134,9 @@ function setupEventListeners() {
     
     // Profile form cancel
     document.getElementById('cancel-edit').addEventListener('click', cancelEdit);
+    
+    // Product image upload
+    setupImageUpload();
 }
 
 function loadSampleData() {
@@ -185,55 +197,85 @@ function goBack() {
 }
 
 // Authentication
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const email = formData.get('email');
     const password = formData.get('password');
     
-    // Simple validation (in real app, this would be server-side)
-    if (email && password) {
-        currentUser = {
-            id: 1,
-            name: 'John Doe',
-            email: email,
-            phone: '+1 (555) 123-4567',
-            location: 'San Francisco, CA',
-            bio: 'Passionate about sustainable living and eco-friendly products.'
-        };
-        
-        localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
-        showScreen('product-feed');
-        updateNavigation();
-        showNotification('Welcome back!', 'success');
-    } else {
+    if (!email || !password) {
         showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'success') {
+            // Login successful - get user info
+            await fetchUserInfo();
+            showScreen('product-feed');
+            updateNavigation();
+            showNotification('Welcome back!', 'success');
+        } else {
+            showNotification(data.message || 'Login failed', 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showNotification('Network error. Please try again.', 'error');
     }
 }
 
-function handleSignup(e) {
+async function handleSignup(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const name = formData.get('name');
     const email = formData.get('email');
     const password = formData.get('password');
     
-    if (name && email && password) {
-        currentUser = {
-            id: Date.now(),
-            name: name,
-            email: email,
-            phone: '',
-            location: '',
-            bio: ''
-        };
-        
-        localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
-        showScreen('product-feed');
-        updateNavigation();
-        showNotification('Account created successfully!', 'success');
-    } else {
+    if (!name || !email || !password) {
         showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                password: password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'success') {
+            // Signup successful - get user info
+            await fetchUserInfo();
+            showScreen('product-feed');
+            updateNavigation();
+            showNotification('Account created successfully!', 'success');
+        } else {
+            showNotification(data.message || 'Signup failed', 'error');
+        }
+    } catch (error) {
+        console.error('Signup error:', error);
+        showNotification('Network error. Please try again.', 'error');
     }
 }
 
@@ -247,6 +289,34 @@ function toggleAuthForm() {
     } else {
         loginCard.style.display = 'none';
         signupCard.style.display = 'block';
+    }
+}
+
+async function fetchUserInfo() {
+    try {
+        const response = await fetch('/userinfo', {
+            method: 'GET',
+            credentials: 'include' // Include cookies for session
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.status === 'success') {
+            currentUser = {
+                id: data.user.id,
+                name: data.user.name,
+                email: data.user.email,
+                phone: '', // Default values for optional fields
+                location: '',
+                bio: ''
+            };
+            
+            localStorage.setItem('ecofinds_user', JSON.stringify(currentUser));
+        } else {
+            console.error('Failed to fetch user info:', data.message);
+        }
+    } catch (error) {
+        console.error('Error fetching user info:', error);
     }
 }
 
@@ -385,22 +455,146 @@ function handleAddProduct(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     
-    const newProduct = {
-        id: Date.now(),
-        title: formData.get('title'),
-        category: formData.get('category'),
-        description: formData.get('description'),
-        price: parseFloat(formData.get('price')),
-        image: '../images/logo.png', // Default to logo for new products
-        seller: currentUser.name
+    // Get the uploaded image file
+    const imageFile = document.getElementById('product-image').files[0];
+    let imageUrl = '../images/logo.png'; // Default fallback
+    
+    if (imageFile) {
+        // Convert file to data URL for storage
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imageUrl = e.target.result;
+            
+            // Create product with the uploaded image
+            const newProduct = {
+                id: Date.now(),
+                title: formData.get('title'),
+                category: formData.get('category'),
+                description: formData.get('description'),
+                price: parseFloat(formData.get('price')),
+                image: imageUrl,
+                seller: currentUser.name
+            };
+            
+            products.push(newProduct);
+            userProducts.push(newProduct);
+            
+            // Reset form and UI
+            resetAddProductForm();
+            showScreen('product-feed');
+            showNotification('Product added successfully!', 'success');
+        };
+        reader.readAsDataURL(imageFile);
+    } else {
+        // No image uploaded, use default
+        const newProduct = {
+            id: Date.now(),
+            title: formData.get('title'),
+            category: formData.get('category'),
+            description: formData.get('description'),
+            price: parseFloat(formData.get('price')),
+            image: imageUrl,
+            seller: currentUser.name
+        };
+        
+        products.push(newProduct);
+        userProducts.push(newProduct);
+        
+        // Reset form and UI
+        resetAddProductForm();
+        showScreen('product-feed');
+        showNotification('Product added successfully!', 'success');
+    }
+}
+
+function resetAddProductForm() {
+    document.getElementById('add-product-form').reset();
+    resetImageUpload();
+}
+
+function resetImageUpload() {
+    document.getElementById('upload-placeholder').style.display = 'block';
+    document.getElementById('image-preview').style.display = 'none';
+    document.getElementById('image-actions').style.display = 'none';
+    document.getElementById('product-image').value = '';
+}
+
+function setupImageUpload() {
+    const imageUploadArea = document.getElementById('image-upload-area');
+    const imageInput = document.getElementById('product-image');
+    
+    // Click to upload
+    imageUploadArea.addEventListener('click', () => {
+        imageInput.click();
+    });
+    
+    // File input change
+    imageInput.addEventListener('change', handleImageSelect);
+    
+    // Drag and drop functionality
+    imageUploadArea.addEventListener('dragover', handleDragOver);
+    imageUploadArea.addEventListener('dragleave', handleDragLeave);
+    imageUploadArea.addEventListener('drop', handleDrop);
+}
+
+function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        if (file.type.startsWith('image/')) {
+            showImagePreview(file);
+        } else {
+            showNotification('Please select a valid image file', 'error');
+        }
+    }
+}
+
+function showImagePreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('image-preview');
+        const placeholder = document.getElementById('upload-placeholder');
+        const actions = document.getElementById('image-actions');
+        
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        actions.style.display = 'flex';
     };
+    reader.readAsDataURL(file);
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
     
-    products.push(newProduct);
-    userProducts.push(newProduct);
-    
-    e.target.reset();
-    showScreen('product-feed');
-    showNotification('Product added successfully!', 'success');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+            document.getElementById('product-image').files = files;
+            showImagePreview(file);
+        } else {
+            showNotification('Please drop a valid image file', 'error');
+        }
+    }
+}
+
+function changeImage() {
+    document.getElementById('product-image').click();
+}
+
+function removeImage() {
+    resetImageUpload();
 }
 
 function renderUserProducts() {
