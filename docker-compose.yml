@@ -1,0 +1,45 @@
+services:
+  backend:
+    build: ./backend
+    container_name: backend
+    environment:
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=eco
+      - PORT=8001
+    depends_on:
+      - db
+    networks:
+      - eco_net
+
+  db:
+    image: postgres
+    container_name: db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eco
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - eco_net
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - eco_net
+
+networks:
+  eco_net:
+
+volumes:
+  db_data:
